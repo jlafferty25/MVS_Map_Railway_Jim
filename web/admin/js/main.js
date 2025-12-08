@@ -89,7 +89,6 @@ scene.add(humanGuide);
 
 // ===== UI refs =====
 const loader = new THREE.GLTFLoader();
-const fileInput = document.getElementById("file");
 
 // ===== Model Cache System =====
 const modelCache = new Map();
@@ -1773,61 +1772,6 @@ function createHumanGuide(heightMeters=HUMAN_HEIGHT) {
     return group;
 }
 
-// ===== File loading (preserve original pivot & transform) =====
-fileInput.addEventListener("change", async e => {
-    const file = e.target.files[0];
-    if (!file)
-        return;
-    
-    // Block file loading if there are unsaved changes
-    if (!checkUnsavedChangesBeforeEdit()) {
-        // Reset file input
-        e.target.value = '';
-        return;
-    }
-    const url = URL.createObjectURL(file);
-
-    try {
-        const gltf = await new Promise( (resolve, reject) => {
-            loader.load(url, resolve, undefined, reject);
-        }
-        );
-
-        const model = gltf.scene;
-        model.userData.isSelectable = true;
-        model.name = (file.name || ("Model " + modelCounter++)).replace(/\.[^/.]+$/, "");
-
-        // Track original source for export/reference reuse
-        const reference = model.name + ".glb";
-        model.userData.sourceRef = {
-            originalFileName: file.name,
-            baseName: model.name,
-            reference: reference
-        };
-
-        // Cache the model for potential reuse
-        modelCache.set(reference, model);
-
-        createBoxHelperFor(model);
-
-        canvasRoot.add(model);
-
-        addModelToList(model, model.name);
-        storeInitialTransform(model);
-        selectObject(model);
-        updateBoxHelper(model);
-        frameCameraOn(model);
-        saveSceneState('create', [model]);
-        updateJSONEditorFromScene();
-    } catch (error) {
-        console.error("Failed to load file:", error);
-    } finally {
-        // Clean up the object URL
-        URL.revokeObjectURL(url);
-    }
-}
-);
-
 // ===== Attach / Detach =====
 // DEPRECATED: Use drag-and-drop attaching instead
 function groupSelectedObjects() {
@@ -1848,6 +1792,24 @@ function groupSelectedObjects() {
     group.userData.isSelectable = true;
     group.userData.isEditorGroup = true;
     group.name = parentObj.name || "Attached " + Date.now();
+    
+    // Preserve wClass and twObjectIx from parent object to the group
+    if (parentObj.userData?.wClass !== undefined) {
+        group.userData.wClass = parentObj.userData.wClass;
+    }
+    if (parentObj.userData?.twObjectIx !== undefined) {
+        group.userData.twObjectIx = parentObj.userData.twObjectIx;
+    }
+    
+    // Store original wClass and twObjectIx for parent object
+    if (!parentObj.userData)
+        parentObj.userData = {};
+    if (parentObj.userData.wClass !== undefined) {
+        parentObj.userData.originalWClass = parentObj.userData.wClass;
+    }
+    if (parentObj.userData.twObjectIx !== undefined) {
+        parentObj.userData.originalTwObjectIx = parentObj.userData.twObjectIx;
+    }
 
     // Store parent object's world transform to preserve visual position
     const parentWorldPosition = new THREE.Vector3();
@@ -1905,6 +1867,14 @@ function groupSelectedObjects() {
             obj.userData = {};
         obj.userData.originalListType = obj.userData.listType || (obj instanceof THREE.Group ? "group" : "model");
         obj.userData.originalName = obj.name;
+        
+        // Store original wClass and twObjectIx for children
+        if (obj.userData.wClass !== undefined) {
+            obj.userData.originalWClass = obj.userData.wClass;
+        }
+        if (obj.userData.twObjectIx !== undefined) {
+            obj.userData.originalTwObjectIx = obj.userData.twObjectIx;
+        }
         if (obj.userData.boxHelper) {
             scene.remove(obj.userData.boxHelper);
             delete obj.userData.boxHelper;
@@ -1979,6 +1949,14 @@ function ungroupSelectedObject() {
         if (child.userData?.originalName)
             child.name = child.userData.originalName;
         const listType = child.userData?.originalListType || child.userData?.listType || (child instanceof THREE.Group ? "group" : "model");
+        
+        // Restore original wClass and twObjectIx if they were stored
+        if (child.userData?.originalWClass !== undefined) {
+            child.userData.wClass = child.userData.originalWClass;
+        }
+        if (child.userData?.originalTwObjectIx !== undefined) {
+            child.userData.twObjectIx = child.userData.originalTwObjectIx;
+        }
 
         // Sidebar will be rebuilt below if we're in a parent group
         // Otherwise add to root of sidebar
@@ -1991,6 +1969,8 @@ function ungroupSelectedObject() {
 
         delete child.userData?.originalListType;
         delete child.userData?.originalName;
+        delete child.userData?.originalWClass;
+        delete child.userData?.originalTwObjectIx;
 
         // Update visuals without clamping to preserve local positions during detaching
         updateModelProperties(child);
@@ -2062,6 +2042,14 @@ function detachFromGroup(obj, skipSelection=false) {
     if (obj.userData?.originalName)
         obj.name = obj.userData.originalName;
     const listType = obj.userData?.originalListType || obj.userData?.listType || (obj instanceof THREE.Group ? "group" : "model");
+    
+    // Restore original wClass and twObjectIx if they were stored
+    if (obj.userData?.originalWClass !== undefined) {
+        obj.userData.wClass = obj.userData.originalWClass;
+    }
+    if (obj.userData?.originalTwObjectIx !== undefined) {
+        obj.userData.twObjectIx = obj.userData.originalTwObjectIx;
+    }
 
     // Sidebar will be rebuilt below if we're in a parent group
     // Otherwise add to root of sidebar
@@ -2074,6 +2062,8 @@ function detachFromGroup(obj, skipSelection=false) {
 
     delete obj.userData?.originalListType;
     delete obj.userData?.originalName;
+    delete obj.userData?.originalWClass;
+    delete obj.userData?.originalTwObjectIx;
 
     // Update visuals without clamping to preserve local positions during detaching
     updateModelProperties(obj);
@@ -2207,6 +2197,14 @@ function cleanupEmptyParentGroups(parentGroup) {
             }
 
             const listType = parentObject.userData?.originalListType || (parentObject instanceof THREE.Group && parentObject.userData?.isEditorGroup ? "group" : "model");
+            
+            // Restore original wClass and twObjectIx if they were stored
+            if (parentObject.userData?.originalWClass !== undefined) {
+                parentObject.userData.wClass = parentObject.userData.originalWClass;
+            }
+            if (parentObject.userData?.originalTwObjectIx !== undefined) {
+                parentObject.userData.twObjectIx = parentObject.userData.originalTwObjectIx;
+            }
 
             if (listType === "group") {
                 addGroupToList(parentObject, parentObject.name || "Attached");
@@ -2217,6 +2215,8 @@ function cleanupEmptyParentGroups(parentGroup) {
             // Clean up the metadata
             delete parentObject.userData?.originalListType;
             delete parentObject.userData?.originalName;
+            delete parentObject.userData?.originalWClass;
+            delete parentObject.userData?.originalTwObjectIx;
 
             // Create box helper for the restored object
             createBoxHelperFor(parentObject);
@@ -2571,6 +2571,14 @@ function addObjectToGroup(obj, group) {
         obj.userData = {};
     obj.userData.originalListType = obj.userData.listType || (obj instanceof THREE.Group ? "group" : "model");
     obj.userData.originalName = obj.name;
+    
+    // Store original wClass and twObjectIx for the object being added
+    if (obj.userData.wClass !== undefined) {
+        obj.userData.originalWClass = obj.userData.wClass;
+    }
+    if (obj.userData.twObjectIx !== undefined) {
+        obj.userData.originalTwObjectIx = obj.userData.twObjectIx;
+    }
 
     // Clean up existing helpers
     if (obj.userData.boxHelper) {
@@ -4630,6 +4638,14 @@ async function processNodeHierarchically(node, parent, existingObjects, processe
                     childObject.userData = {};
                 childObject.userData.originalListType = childObject.userData.listType || (childObject instanceof THREE.Group ? "group" : "model");
                 childObject.userData.originalName = childObject.name;
+                
+                // Store original wClass and twObjectIx for the child
+                if (childObject.userData.wClass !== undefined) {
+                    childObject.userData.originalWClass = childObject.userData.wClass;
+                }
+                if (childObject.userData.twObjectIx !== undefined) {
+                    childObject.userData.originalTwObjectIx = childObject.userData.twObjectIx;
+                }
 
                 // Store expected local position from JSON for comparison
                 if (childNode.pTransform?.aPosition) {
