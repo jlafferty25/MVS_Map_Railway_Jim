@@ -679,7 +679,9 @@ class ExtractMap extends MV.MVMF.NOTIFICATION
 
    async RemoveRMPObject (mpRemovedNodes)
    {
+      console.log ('Waiting for Stack...');
       await this.WaitForSingleObject (this.CheckStack.bind (this), 125);
+      console.log ('Waiting Complete...(stack)');
 
       for (let twObjectIx in mpRemovedNodes)
       {
@@ -699,12 +701,15 @@ class ExtractMap extends MV.MVMF.NOTIFICATION
          this.#twObjectIx_PendingDelete = pRMPObject.twObjectIx;
          pIAction.Send (this, this.onRSPClose);
 
+         console.log ('Waiting for Close...');
          await this.WaitForSingleObject (this.CheckClose.bind (this), 125);
+         console.log ('Waiting Complete...(close)');
       }
 
       this.UpdateEditor ();
 
       ClosePublishModal ();
+      console.log ('Publish Complete!');
    }
 
    onPublish ()
