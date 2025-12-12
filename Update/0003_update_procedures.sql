@@ -141,7 +141,6 @@ DROP PROCEDURE IF EXISTS set_RMRoot_RMPObject_Close;
 DROP PROCEDURE IF EXISTS set_RMRoot_RMPObject_Open;
 DROP PROCEDURE IF EXISTS set_RMRoot_RMTObject_Close;
 DROP PROCEDURE IF EXISTS set_RMRoot_RMTObject_Open;
-DROP PROCEDURE IF EXISTS init_DefaultScene;
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -12597,7 +12596,7 @@ BEGIN
                                      CALL call_Error (-9, 'Failed to push events', nError);
                           END IF ;
                    ELSE
-                            CALL call_Error (-8, 'Failed to log action', nError);
+                            CALL call_Error (-8, 'Failed to log action', nError);
                  END IF ;
         END IF ;
 
@@ -12617,89 +12616,3 @@ BEGIN
 END$$
   
 DELIMITER ;
-
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-~~                                                                                                                            ~~
-~~                                             MVD_RP1_Map : init_DefaultScene.sql                                            ~~
-~~                                                                                                                            ~~
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-~~                            Copyright (c) 2023-2025 Metaversal Corporation. All rights reserved.                            ~~
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-
-DELIMITER $$
-
-CREATE PROCEDURE init_DefaultScene
-(
-)
-BEGIN
-       DECLARE nResult INT;
-
-       CALL set_RMRoot_RMPObject_Open
-       (
-          '0.0.0.0',                 -- sIPAddress           
-          1,                         -- twRPersonaIx         
-          1,                         -- twRMRootIx           
-          'My First Scene',          -- Name_wsRMPObjectId   
-          1,                         -- Type_bType           
-          0,                         -- Type_bSubtype        
-          1,                         -- Type_bFiction        
-          0,                         -- Type_bMovable        
-          1,                         -- Owner_twRPersonaIx   
-          0,                         -- Resource_qwResource  
-          '',                        -- Resource_sName       
-          '',                        -- Resource_sReference  
-          0,                         -- Transform_Position_dX
-          0,                         -- Transform_Position_dY
-          0,                         -- Transform_Position_dZ
-          0,                         -- Transform_Rotation_dX
-          0,                         -- Transform_Rotation_dY
-          0,                         -- Transform_Rotation_dZ
-          1,                         -- Transform_Rotation_dW
-          1,                         -- Transform_Scale_dX   
-          1,                         -- Transform_Scale_dY   
-          1,                         -- Transform_Scale_dZ   
-          150,                       -- Bound_dX             
-          150,                       -- Bound_dY             
-          150,                       -- Bound_dZ             
-          nResult                    -- nResult
-       );
-       -- twRMPObjectIx = 1
-
-       CALL set_RMPObject_RMPObject_Open
-       (
-          '0.0.0.0',                 -- sIPAddress           
-          1,                         -- twRPersonaIx         
-          1,                         -- twRMPObjectIx        
-          'Hello World!',            -- Name_wsRMPObjectId   
-          2,                         -- Type_bType           
-          0,                         -- Type_bSubtype        
-          1,                         -- Type_bFiction        
-          0,                         -- Type_bMovable        
-          1,                         -- Owner_twRPersonaIx   
-          0,                         -- Resource_qwResource  
-          '',                        -- Resource_sName       
-          '/scenes/hello_world.glb', -- Resource_sReference  
-          0,                         -- Transform_Position_dX
-          0,                         -- Transform_Position_dY
-          0,                         -- Transform_Position_dZ
-          0,                         -- Transform_Rotation_dX
-          0,                         -- Transform_Rotation_dY
-          0,                         -- Transform_Rotation_dZ
-          1,                         -- Transform_Rotation_dW
-          1,                         -- Transform_Scale_dX   
-          1,                         -- Transform_Scale_dY   
-          1,                         -- Transform_Scale_dZ   
-          134.65382385253906,        -- Bound_dX             
-          13.596150933846705,        -- Bound_dY             
-          129.60743890149325,        -- Bound_dZ             
-          nResult                    -- nResult
-       );
-       -- twRMPObjectIx = 2
-END$$
-  
-DELIMITER ;
-
-CALL init_DefaultScene ();
-
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
