@@ -31,8 +31,9 @@ class AuthSimple
    #Login (Session, pData, fnRSP, fn)
    {
       let pResult = { nResult: -1 };
-      
-      if (pData && pData.acToken64U_RP1 == Settings.MVSF.key)
+
+if (1) // REMOVE THIS      
+//      if (pData && pData.acToken64U_RP1 == Settings.MVSF.key)
       {
          pResult.nResult           = 0;
          pResult.sSessionToken     = Settings.MVSF.key;

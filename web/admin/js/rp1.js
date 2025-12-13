@@ -911,7 +911,8 @@ class ExtractMap extends MV.MVMF.NOTIFICATION
             this.#pZone = new MV.MVMF.COOKIE.ZONE (pData, 'Origin');
 
             sKey = this.#pZone.Get ('sKey');
-
+// REMOVETHIS            
+sKey = 'password';
             if (sKey != null)
                this.#m_pLnG.Login ('token=' + sKey );
          }
